@@ -1,31 +1,46 @@
 import streamlit as st
-import yfinance as yf
-import pandas as pd
+import streamlit_authenticator as stauth
+
+# Below is a DEMO user setup. For real usage:
+# - Store hashed passwords in a secure file or database
+# - Do NOT put plain-text passwords in code
+names = ["Alice", "Bob"]
+usernames = ["alice123", "bob456"]
+
+# Passwords in plain text just for demo. Use .Hasher() to create hashed versions
+passwords = ["123", "abc"]
+hashed_passwords = stauth.Hasher(passwords).generate()
+
+# Create authenticator object
+authenticator = stauth.Authenticate(
+    names, 
+    usernames, 
+    hashed_passwords,
+    "my_cookie_name",     # a unique cookie name
+    "my_signature_key",   # a random key for signature
+    cookie_expiry_days=1
+)
+
+def show_home():
+    st.title("Welcome to My Advanced Streamlit App")
+    st.write("Use the sidebar or the pages menu to explore:")
+    st.write("- **AI Stock Analysis** to query OpenAI about specific stocks")
+    st.write("- **Blog** to read some example posts")
+    st.write("You’re currently on the Home page.")
 
 def main():
-    st.title("Simple Stock Tracker")
-    st.write("Enter a stock ticker below (e.g. AAPL, TSLA, MSFT) to see its recent price chart.")
-
-    # Text input for the user to enter a ticker
-    ticker_symbol = st.text_input("Stock Ticker:", "AAPL")
-
-    # Fetch data only when user clicks the button
-    if st.button("Fetch Data"):
-        st.write(f"Fetching data for {ticker_symbol}...")
-        
-        # Download 1 year of historical data from Yahoo Finance
-        df = yf.download(ticker_symbol, period="1y", progress=False)
-        
-        if df.empty:
-            st.error("No data found. Check the ticker symbol and try again.")
-        else:
-            st.success(f"Data found! Showing closing prices for {ticker_symbol}.")
-            # Show a quick dataframe preview
-            st.dataframe(df.tail(5))
-            
-            # Plot closing price
-            st.line_chart(df['Close'])
+    # Login widget (appears in the main area)
+    name, auth_status, username = authenticator.login("Login", "main")
+    
+    if auth_status is False:
+        st.error("Username/password is incorrect.")
+    elif auth_status is None:
+        st.warning("Please enter your username and password.")
+    else:
+        # Successfully logged in
+        authenticator.logout("Logout", "sidebar")
+        show_home()
 
 if __name__ == "__main__":
+    st.set_page_config(page_title="My Advanced Streamlit App", layout="wide")
     main()
-
